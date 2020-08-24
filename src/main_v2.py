@@ -6,9 +6,21 @@ import json
 import datetime
 from logging import error
 
+def getParameter(name):
+    ssm = boto3.client('ssm')
+    parameter = ssm.get_parameter(Name=name)
+    print(f"get parameter {parameter}")
+    return parameter['Parameter']['Value']
+
+def get_db():
+    dynamo_db = boto3.resource("dynamodb")
+    db_name = getParameter(os.environ.get('DB_NAME'))
+    table = dynamo_db.Table(db_name)
+    return table
+
 def create_customer(firstname, lastname, email):
     dynamo_db = boto3.client('dynamodb')
-    db_name = os.environ.get('DB_NAME', 'DA_Serverless')
+    db_name = getParameter(os.environ.get('DB_NAME'))
     print(f"DB_NAME: {db_name}")
     create_item = {'id': {'S': str(uuid.uuid4())}}
 
@@ -34,6 +46,35 @@ def create_customer(firstname, lastname, email):
             "body": "Server error: " + str(ex)
         }
         return resp
+
+def list_customers():
+    table = get_db()
+    customers = table.scan()
+    
+    print(f"Found {customers.get('Count', 0)} records")
+    
+    return {
+        "isBase64Encoded": True,
+        "statusCode": 200,
+        "body": json.dumps(customers.get('Items', []))
+    }
+
+def get_customer(id):
+    print(f"get customer: {id}")
+    table = get_db()
+    customer = table.get_item(Key={"id": id}).get('Item')
+    
+    if customer:
+        return {
+            "isBase64Encoded": False,
+            "statusCode": 200,
+            "body": json.dumps(customer)
+        }
+    else:
+        return {
+            "isBase64Encoded": False,
+            "statusCode": 404
+        }
 
 def handle_invalid(event, context):
     return {
@@ -90,18 +131,10 @@ def handle_post(event, context):
 
 def handle_get(event, context):
     print(f"Handling get items")
-    dynamo_db = boto3.resource('dynamodb')
-    db_name = os.environ.get('DB_NAME', 'DA_Serverless')
-    table = dynamo_db.Table(db_name)
-    customers = table.scan()
-    
-    print(f"Found {customers.get('Count', 0)} records")
-    
-    return {
-        "isBase64Encoded": True,
-        "statusCode": 200,
-        "body": json.dumps(customers.get('Items', []))
-    }
+
+    customerId = event.get('queryStringParameters', {}).get('id')
+
+    return get_customer(customerId) if customerId else list_customers()
 
 def lambda_handler(event, context):
     print(f"Event: {event}")

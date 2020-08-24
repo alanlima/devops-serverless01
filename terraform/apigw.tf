@@ -1,7 +1,11 @@
 
+resource "aws_api_gateway_account" "default" {
+  cloudwatch_role_arn = aws_iam_role.apigw.arn
+}
+
 resource "aws_api_gateway_rest_api" "this" {
   name = "${var.project}_api"
-  tags  = var.common_tags
+  tags = var.common_tags
 }
 
 resource "aws_api_gateway_resource" "customers" {
@@ -18,20 +22,6 @@ resource "aws_api_gateway_method" "customers" {
   api_key_required = true
 }
 
-# resource "aws_api_gateway_resource" "proxy" {
-#   rest_api_id = aws_api_gateway_rest_api.this.id
-#   parent_id   = aws_api_gateway_rest_api.this.root_resource_id
-#   path_part   = "{proxy+}"
-# }
-
-# resource "aws_api_gateway_method" "proxy" {
-#   rest_api_id      = aws_api_gateway_rest_api.this.id
-#   resource_id      = aws_api_gateway_resource.proxy.id
-#   http_method      = "ANY"
-#   authorization    = "NONE"
-# #   api_key_required = false
-# }
-
 resource "aws_api_gateway_integration" "lambda" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   resource_id = aws_api_gateway_method.customers.resource_id
@@ -42,7 +32,6 @@ resource "aws_api_gateway_integration" "lambda" {
   uri                     = aws_lambda_function.this.invoke_arn
 }
 
-
 resource "aws_api_gateway_deployment" "prod" {
   depends_on = [
     aws_api_gateway_integration.lambda,
@@ -52,7 +41,7 @@ resource "aws_api_gateway_deployment" "prod" {
   rest_api_id = aws_api_gateway_rest_api.this.id
   stage_name  = "prod"
   lifecycle {
-      create_before_destroy = true
+    create_before_destroy = true
   }
 }
 
@@ -88,19 +77,29 @@ resource "aws_api_gateway_usage_plan" "standard" {
     api_id = aws_api_gateway_rest_api.this.id
     stage  = aws_api_gateway_deployment.prod.stage_name
   }
-  tags  = var.common_tags
+  tags = var.common_tags
 }
 
 resource "aws_api_gateway_api_key" "default" {
-  name = "${var.project}_apikey"
+  name        = "${var.project}_apikey"
   description = "Give access to customers endpoint"
-  tags  = var.common_tags
+  tags        = var.common_tags
 }
 
 resource "aws_api_gateway_usage_plan_key" "main" {
   key_id        = aws_api_gateway_api_key.default.id
   key_type      = "API_KEY"
   usage_plan_id = aws_api_gateway_usage_plan.standard.id
+}
+
+resource "aws_api_gateway_method_settings" "default" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+  stage_name  = aws_api_gateway_deployment.prod.stage_name
+  method_path = "*/*"
+  settings {
+    metrics_enabled = true
+    logging_level   = "INFO"
+  }
 }
 
 # resource "aws_api_gateway_resource" "proxy" {
