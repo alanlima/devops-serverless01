@@ -3,6 +3,11 @@ variable "project" {
   default = "devops_serverless01"
 }
 
+variable "region" { 
+  type = string
+  default = "ap-southeast-2"
+}
+
 variable "common_tags" {
   type = map(string)
   default = {

@@ -1,3 +1,4 @@
+data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role" "lambda" {
   name               = "${var.project}_lambda_role"
@@ -76,7 +77,7 @@ resource "aws_iam_policy" "lambda" {
             "Action": [
                 "ssm:GetParameter"
             ],
-            "Resource": "*",
+            "Resource": "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/*",
             "Effect": "Allow"
         }
     ]
