@@ -17,6 +17,9 @@ output "api_key" {
 output "report_topic_arn" {
   value = aws_sns_topic.report_count.arn
 }
+output "photos_bucket" {
+  value = aws_s3_bucket.photos.bucket
+}
 
 # output "photos_loc_file" {
 #   value = data.archive_file.photos_handler

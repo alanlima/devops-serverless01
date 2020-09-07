@@ -14,7 +14,7 @@ deploy: init pack_lambda
 	@$(RUNNER) terraform apply -auto-approve
 .PHONY: deploy
 
-clean:
+clean: clean-s3
 	@$(RUNNER) terraform destroy -auto-approve
 	@rm -f ./terraform/lambda.zip
 .PHONY: clean
@@ -87,8 +87,16 @@ kick-n-run:
 .PHONY:kick-n-run
 
 subscribe-sns-report-topic: pull-required-images
-	@$(eval SNS_REPORT_TOPIC_ARN=$(shell $(RUNNER) jq -r ".outputs[\"report_topic_arn\"].value" ./terraform/terraform.tfstate))
+	$(eval SNS_REPORT_TOPIC_ARN=$(shell $(RUNNER) jq -r ".outputs[\"report_topic_arn\"].value" ./terraform/terraform.tfstate))
 	@$(RUNNER) --entrypoint=sh \
 		-e SNS_REPORT_TOPIC_ARN=$(SNS_REPORT_TOPIC_ARN) \
+		-e SNS_REPORT_EMAIL=$(SNS_REPORT_EMAIL) \
 		aws ./scripts/sns-report-topic-subscriber.sh
 .PHONY:subscribe-sns-report-topic
+
+clean-s3: pull-required-images
+	@$(eval BUCKET_NAME=$(shell $(RUNNER) jq -r ".outputs[\"photos_bucket\"].value" ./terraform/terraform.tfstate))
+	@$(RUNNER) --entrypoint=sh \
+		-e BUCKET_NAME=$(BUCKET_NAME) \
+		aws ./scripts/clean-s3.sh
+.PHONY:clean-s3
