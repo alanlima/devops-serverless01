@@ -3,8 +3,8 @@ variable "project" {
   default = "devops_serverless01"
 }
 
-variable "region" { 
-  type = string
+variable "region" {
+  type    = string
   default = "ap-southeast-2"
 }
 
@@ -19,4 +19,12 @@ variable "common_tags" {
 variable "db_name" {
   type    = string
   default = "DA_Serverless"
+}
+
+variable "mail_sender" {
+  type = map(string)
+  default = {
+    name  = ""
+    email = ""
+  }
 }

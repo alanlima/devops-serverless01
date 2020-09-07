@@ -1,3 +1,5 @@
+-include .env
+
 RUNNER ?= docker-compose run --rm -T
 
 init: pull-required-images
@@ -26,14 +28,14 @@ _pack_lambda:
 	@mv ./src/lambda.zip ./terraform/lambda.zip
 .PHONY:_pack_lambda
 
-demo:
+warm-up:
 	@echo "\e[32mCreating new customer...\e[0m \n"
-	@$(MAKE) create_customer FIRST_NAME="Linus" LAST_NAME="Torvalds" EMAIL="fake@mail.com"  
+	@$(MAKE) create-customer FIRST_NAME="Linus" LAST_NAME="Torvalds" EMAIL="fake@mail.com"  
 	@echo "\n \e[32mListing table content\e[0m \n"
-	@$(MAKE) list_customers
-.PHONY: demo
+	@$(MAKE) list-customers
+.PHONY: warm-up
 
-create_customer: pull-required-images
+create-customer: pull-required-images
 	@$(eval API_KEY=$(shell $(RUNNER) jq -r ".outputs[\"api_key\"].value" ./terraform/terraform.tfstate))
 	@$(eval API_URL=$(shell $(RUNNER) jq -r ".outputs[\"api_url\"].value" ./terraform/terraform.tfstate))
 
@@ -46,14 +48,14 @@ create_customer: pull-required-images
 	@echo "Running cURL command: $(CURL_REQUEST)"
 
 	@$(shell echo "$(CURL_REQUEST)")
-.PHONY:create_customer
+.PHONY:create-customer
 
-list_customers: pull-required-images
+list-customers: pull-required-images
 	@$(RUNNER) aws dynamodb scan \
 		--table-name DA_Serverless \
 		--output json \
-		| $(RUNNER) jq '[.Items[] | {id: .id.S, firstname: .firstname.S, lastname: .lastname.S, email: .email.S, created_at: .created_time.S}]' 
-.PHONY:list_customers
+		| $(RUNNER) jq '[.Items[] | {id: .id.S, firstname: .firstname.S, lastname: .lastname.S, email: .email.S, created_at: .created_time.S, photo_location: .photo_location.S}]' 
+.PHONY:list-customers
 
 pull-required-images:
 	@if [ -z "$(shell docker image ls --filter=reference=stedolan/jq -q)" ]; then\
@@ -72,3 +74,21 @@ pull-required-images:
 		docker-compose pull aws;\
 	fi
 .PHONY:pull-required-images
+
+kick-n-run: 
+	@$(MAKE) deploy
+	@echo "\e[33mWaiting the provision of all services\e[0m"
+	@$(RUNNER) aws dynamodb wait table-exists --table-name DA_Serverless
+	@echo "\e[33mWaiting for lambda\e[0m"
+	@$(RUNNER) aws lambda wait function-active --function-name func_customers
+	@echo "\e[33mSleep time\e[0m"
+	@sleep 20s
+	@$(MAKE) warm-up
+.PHONY:kick-n-run
+
+subscribe-sns-report-topic: pull-required-images
+	@$(eval SNS_REPORT_TOPIC_ARN=$(shell $(RUNNER) jq -r ".outputs[\"report_topic_arn\"].value" ./terraform/terraform.tfstate))
+	@$(RUNNER) --entrypoint=sh \
+		-e SNS_REPORT_TOPIC_ARN=$(SNS_REPORT_TOPIC_ARN) \
+		aws ./scripts/sns-report-topic-subscriber.sh
+.PHONY:subscribe-sns-report-topic

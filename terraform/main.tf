@@ -12,33 +12,42 @@ resource "aws_ssm_parameter" "api_key" {
   tags  = var.common_tags
 }
 
-resource "aws_kms_key" "this" {
-  description             = "${var.project} - DB Encrypt Key"
-  deletion_window_in_days = 7
-  tags                    = var.common_tags
+# resource "aws_kms_key" "this" {
+#   description             = "${var.project} - DB Encrypt Key"
+#   deletion_window_in_days = 7
+#   tags                    = var.common_tags
+# }
+
+data "aws_kms_key" "this" {
+  key_id = "0353c4e7-5cb9-473f-a3ae-f01795dab9a5"
 }
 
 resource "aws_dynamodb_table" "this" {
-  name           = var.db_name
-  billing_mode   = "PROVISIONED"
-  write_capacity = 5
-  read_capacity  = 5
-  hash_key       = "id"
-#   range_key      = "lastname"
+  name             = var.db_name
+  billing_mode     = "PROVISIONED"
+  write_capacity   = 5
+  read_capacity    = 5
+  hash_key         = "id"
+  stream_enabled   = true
+  stream_view_type = "KEYS_ONLY"
+
+  # range_key = "email"
+
 
   attribute {
     name = "id"
     type = "S"
   }
 
-#   attribute {
-#     name = "lastname"
-#     type = "S"
-#   }
+  # attribute {
+  #   name = "email"
+  #   type = "S"
+  # }
 
   server_side_encryption {
-    enabled     = true
-    kms_key_arn = aws_kms_key.this.arn
+    enabled = true
+    # kms_key_arn = aws_kms_key.this.arn
+    kms_key_arn = data.aws_kms_key.this.arn
   }
 
   tags = var.common_tags

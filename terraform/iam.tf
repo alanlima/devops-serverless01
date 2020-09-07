@@ -61,10 +61,21 @@ resource "aws_iam_policy" "lambda" {
             "Action": [
                 "dynamodb:PutItem",
                 "dynamodb:Scan",
-                "dynamodb:GetItem"
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem"
             ],
             "Resource": "${aws_dynamodb_table.this.arn}",
             "Effect": "Allow"
+        },
+        {
+            "Effect": "Allow",
+            "Resource": "${aws_dynamodb_table.this.arn}/stream/*",
+            "Action": [
+                "dynamodb:DescribeStream",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:ListStreams"
+            ]
         },
         {
             "Action": [
@@ -79,6 +90,21 @@ resource "aws_iam_policy" "lambda" {
             ],
             "Resource": "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/*",
             "Effect": "Allow"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sns:Publish"
+            ],
+            "Resource": "*"
         }
     ]
 }
