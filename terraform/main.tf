@@ -1,3 +1,18 @@
+data "archive_file" "customers_lambda" {
+  type        = "zip"
+  output_path = "${path.module}/files/customers_lambda.zip"
+
+  source {
+    content  = file("../src/common.py")
+    filename = "common.py"
+  }
+
+  source {
+    content  = file("../src/main.py")
+    filename = "main.py"
+  }
+}
+
 resource "aws_ssm_parameter" "db_name" {
   name  = "/${var.project}/DB_NAME"
   type  = "String"
@@ -54,11 +69,11 @@ resource "aws_dynamodb_table" "this" {
 }
 
 resource "aws_lambda_function" "this" {
-  filename         = "lambda.zip"
+  filename         = data.archive_file.customers_lambda.output_path
+  source_code_hash = data.archive_file.customers_lambda.output_base64sha256
   function_name    = "func_customers"
   role             = aws_iam_role.lambda.arn
   handler          = "main.lambda_handler"
-  source_code_hash = filebase64sha256("lambda.zip")
   runtime          = "python3.8"
   tags             = var.common_tags
   environment {

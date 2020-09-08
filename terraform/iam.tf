@@ -79,13 +79,6 @@ resource "aws_iam_policy" "lambda" {
         },
         {
             "Action": [
-                "kms:Decrypt"
-            ],
-            "Resource": "*",
-            "Effect": "Allow"
-        },
-        {
-            "Action": [
                 "ssm:GetParameter"
             ],
             "Resource": "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/*",
@@ -109,6 +102,13 @@ resource "aws_iam_policy" "lambda" {
     ]
 }
 EOF
+}
+
+resource "aws_kms_grant" "lambda" {
+  name              = "${var.project}-lambda-grant"
+  key_id            = data.aws_kms_key.this.id
+  grantee_principal = aws_iam_role.lambda.arn
+  operations        = ["Decrypt"]
 }
 
 resource "aws_iam_policy" "apigw" {

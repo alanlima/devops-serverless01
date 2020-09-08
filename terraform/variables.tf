@@ -28,3 +28,8 @@ variable "mail_sender" {
     email = ""
   }
 }
+
+variable "photos_bucket" {
+  type    = string
+  default = "da-profile-photos"
+}

@@ -29,7 +29,7 @@ data "archive_file" "report_count" {
 }
 
 resource "aws_s3_bucket" "photos" {
-  bucket = "da-profile-photos"
+  bucket = var.photos_bucket
   acl    = "private"
   tags   = var.common_tags
 }
@@ -59,7 +59,6 @@ resource "aws_lambda_function" "photos_handler" {
     ]
   }
 }
-
 
 resource "aws_lambda_permission" "allow_bucket" {
   statement_id  = "AllowExecutionFormS3Bucket"

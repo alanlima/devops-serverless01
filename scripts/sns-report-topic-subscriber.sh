@@ -14,3 +14,5 @@ aws sns subscribe \
     --topic-arn $SNS_REPORT_TOPIC_ARN \
     --protocol email \
     --notification-endpoint $SNS_REPORT_EMAIL
+
+echo "Please check your e-mail to confirm the subscription."
