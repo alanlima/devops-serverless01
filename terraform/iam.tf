@@ -108,7 +108,7 @@ resource "aws_kms_grant" "lambda" {
   name              = "${var.project}-lambda-grant"
   key_id            = data.aws_kms_key.this.id
   grantee_principal = aws_iam_role.lambda.arn
-  operations        = ["Decrypt"]
+  operations        = ["Decrypt", "Encrypt"]
 }
 
 resource "aws_iam_policy" "apigw" {

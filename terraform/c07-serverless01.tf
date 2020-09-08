@@ -43,6 +43,7 @@ resource "aws_lambda_function" "photos_handler" {
   source_code_hash = data.archive_file.photos_handler.output_base64sha256
   tags             = var.common_tags
   runtime          = "python3.8"
+  kms_key_arn      = data.aws_kms_key.this.arn
   environment {
     variables = {
       DB_NAME      = aws_ssm_parameter.db_name.name
@@ -93,6 +94,7 @@ resource "aws_lambda_function" "report_count" {
   source_code_hash = data.archive_file.report_count.output_base64sha256
   tags             = var.common_tags
   runtime          = "python3.8"
+  kms_key_arn      = data.aws_kms_key.this.arn
   environment {
     variables = {
       DB_NAME       = aws_ssm_parameter.db_name.name

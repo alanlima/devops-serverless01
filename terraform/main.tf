@@ -76,6 +76,7 @@ resource "aws_lambda_function" "this" {
   handler          = "main.lambda_handler"
   runtime          = "python3.8"
   tags             = var.common_tags
+  kms_key_arn      = data.aws_kms_key.this.arn
   environment {
     variables = {
       DB_NAME = aws_ssm_parameter.db_name.name

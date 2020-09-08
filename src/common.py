@@ -2,7 +2,7 @@ import os
 import boto3
 from boto3.dynamodb.conditions import Key
 
-def getParameter(name):
+def get_ssm_parameter(name):
     ssm = boto3.client('ssm')
     parameter = ssm.get_parameter(Name=name)
     print(f"get parameter {parameter}")
@@ -10,7 +10,7 @@ def getParameter(name):
 
 def get_db():
     dynamo_db = boto3.resource("dynamodb")
-    db_name = getParameter(os.environ.get('DB_NAME'))
+    db_name = get_ssm_parameter(os.environ.get('DB_NAME'))
     table = dynamo_db.Table(db_name)
     return table
 
