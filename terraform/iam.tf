@@ -61,17 +61,21 @@ resource "aws_iam_policy" "lambda" {
             "Action": [
                 "dynamodb:PutItem",
                 "dynamodb:Scan",
-                "dynamodb:GetItem"
+                "dynamodb:GetItem",
+                "dynamodb:UpdateItem"
             ],
             "Resource": "${aws_dynamodb_table.this.arn}",
             "Effect": "Allow"
         },
         {
+            "Effect": "Allow",
+            "Resource": "${aws_dynamodb_table.this.arn}/stream/*",
             "Action": [
-                "kms:Decrypt"
-            ],
-            "Resource": "*",
-            "Effect": "Allow"
+                "dynamodb:DescribeStream",
+                "dynamodb:GetRecords",
+                "dynamodb:GetShardIterator",
+                "dynamodb:ListStreams"
+            ]
         },
         {
             "Action": [
@@ -79,10 +83,32 @@ resource "aws_iam_policy" "lambda" {
             ],
             "Resource": "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/*",
             "Effect": "Allow"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendEmail",
+                "ses:SendRawEmail"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sns:Publish"
+            ],
+            "Resource": "*"
         }
     ]
 }
 EOF
+}
+
+resource "aws_kms_grant" "lambda" {
+  name              = "${var.project}-lambda-grant"
+  key_id            = data.aws_kms_key.this.id
+  grantee_principal = aws_iam_role.lambda.arn
+  operations        = ["Decrypt", "Encrypt"]
 }
 
 resource "aws_iam_policy" "apigw" {

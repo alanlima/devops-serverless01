@@ -13,3 +13,14 @@ output "api_url" {
 output "api_key" {
   value = aws_api_gateway_api_key.default.value
 }
+
+output "report_topic_arn" {
+  value = aws_sns_topic.report_count.arn
+}
+output "photos_bucket" {
+  value = aws_s3_bucket.photos.bucket
+}
+
+# output "photos_loc_file" {
+#   value = data.archive_file.photos_handler
+# }

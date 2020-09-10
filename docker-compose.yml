@@ -8,10 +8,10 @@ services:
       - ${PWD}:/app
 
   terraform:
-    image: hashicorp/terraform:0.13.1
-    working_dir: /terraform
+    image: hashicorp/terraform:0.13.2
+    working_dir: /app/terraform
     volumes:
-      - ${PWD}/terraform:/terraform
+      - ${PWD}:/app
       - ${HOME}/.aws:/root/.aws
     environment:
       - AWS_ACCESS_KEY_ID
