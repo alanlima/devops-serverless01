@@ -1,4 +1,4 @@
-data "archive_file" "photos_handler" {
+data "archive_file" "photos_lambda" {
   type        = "zip"
   output_path = "${path.module}/files/photos_lambda.zip"
 
@@ -13,7 +13,7 @@ data "archive_file" "photos_handler" {
   }
 }
 
-data "archive_file" "report_count" {
+data "archive_file" "report_count_lambda" {
   type        = "zip"
   output_path = "${path.module}/files/report_count_lambda.zip"
 
@@ -36,11 +36,11 @@ resource "aws_s3_bucket" "photos" {
 
 
 resource "aws_lambda_function" "photos_handler" {
-  filename         = data.archive_file.photos_handler.output_path
+  filename         = data.archive_file.photos_lambda.output_path
   function_name    = "func_profile_photos"
   role             = aws_iam_role.lambda.arn
   handler          = "photos_lambda.handler"
-  source_code_hash = data.archive_file.photos_handler.output_base64sha256
+  source_code_hash = data.archive_file.photos_lambda.output_base64sha256
   tags             = var.common_tags
   runtime          = "python3.8"
   kms_key_arn      = data.aws_kms_key.this.arn
@@ -87,11 +87,11 @@ resource "aws_sns_topic" "report_count" {
 }
 
 resource "aws_lambda_function" "report_count" {
-  filename         = data.archive_file.report_count.output_path
+  filename         = data.archive_file.report_count_lambda.output_path
   function_name    = "func_report_count"
   role             = aws_iam_role.lambda.arn
   handler          = "report_count_lambda.handler"
-  source_code_hash = data.archive_file.report_count.output_base64sha256
+  source_code_hash = data.archive_file.report_count_lambda.output_base64sha256
   tags             = var.common_tags
   runtime          = "python3.8"
   kms_key_arn      = data.aws_kms_key.this.arn
